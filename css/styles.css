@@ -74,10 +74,11 @@ LEFT Panel styles. Left panel are binary boxes and flashing boxes under logo (in
 .left-panel > .binary-check-container > .binary-check > .binary-container > .binary-box {
   float: left;
   width: 88.2%;
+  height: calc(100% - calc(calc(2px + 2px + 3px) * 2) - 4px);
 }
 .left-panel > .binary-check-container > .binary-check > .binary-container > .binary-box > .binary-text {
   width: calc(100% - calc(calc(2px + 2px + 3px) * 2) - 19px);
-  height: calc(50% - calc(calc(2px + 2px + 3px) * 2) - 1px);
+  height: calc(50% - 6px);
   margin: 2px;
   margin-left: 20px;
   padding: 2px;
@@ -958,7 +959,7 @@ CENTER is stargate and some lines from chevron boxes
   display: block;
 }
 /*
-RIGHT Panel are chevron boxes 
+RIGHT Panel are chevron boxes
 */
 .right-panel {
   height: 93%;
@@ -1318,7 +1319,7 @@ Utils
   align-items: center;
   opacity: 0;
   /* Initially hidden */
-  transition: all 1.5s;
+  transition: all 1s;
 }
 @keyframes flashingTextWhite {
   0% {

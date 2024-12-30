@@ -1,4 +1,8 @@
 let notificationTimeout;
+let currentAddress = "";
+let currentStep = 0;
+
+
 function lockChevron(number, incomming = false) {
     const chevron = `chevron-${number}`;
     const chevron_status = `chevron-status-${number}`;
@@ -23,7 +27,7 @@ function lockChevron(number, incomming = false) {
     } else {
         setNotificationText("engaged");
         setTimeout(() => activeChevronLine(number), 1000);
-}
+    }
 }
 
 function unlockChevrons() {
@@ -61,7 +65,7 @@ function activateChevron(number, symbol) {
     if (targetDiv) {
         targetDiv.classList.add("active");
         lockChevron(number);
-        setTimeout(() => deactivateChevron(number), 500);
+        setTimeout(() => deactivateChevron(number), 1000);
     } else {
         console.error(`Div with id "${targetId}" not found.`);
     }
@@ -116,7 +120,7 @@ function setNotificationText(text) {
         //favor for css
         setTimeout(() => notificationText.classList.add(text), 10);
         if (text === "shutdown") {
-            notificationTimeout = setTimeout(() => setNotificationText("idle"), 2500);
+            notificationTimeout = setTimeout(() => setNotificationText("idle"), 3500);
         }
     }
 }
@@ -142,10 +146,9 @@ setDestination("");
 let rotationAngle = 0;
 let rotationDirection = 1; // 1 for clockwise, -1 for counterclockwise
 
-function startRotation() {
+function startRotation(direction) {
     const rotatingObject = document.getElementById('stargate-rotation');
-    rotationDirection = Math.random() < 0.5 ? 1 : -1; // Randomly set rotation direction
-    rotatingObject.style.animation = `rotate 20s linear infinite ${rotationDirection > 0 ? 'normal' : 'reverse'}`;
+    rotatingObject.style.animation = `rotate 20s linear infinite ${direction === 0 ? 'normal' : 'reverse'}`;
 }
 
 function stopRotation() {
@@ -190,7 +193,7 @@ function createGlyph(text, targetElementID) {
         customDiv.style.left = targetPosition.left + "px";
         customDiv.style.top = targetPosition.top + "px";
         customDiv.style.fontSize = "100px";
-    }, 2500);
+    }, 1000);
 }
 
 function removeGlyphs() {
@@ -215,12 +218,12 @@ function openGateInfinite() {
 }
 
 function shutdownGate() {
-
     const gateBackground = document.getElementById("stargate-background");
     gateBackground.classList.add("shutdown");
+    stopRotation();
     unlockChevrons();
     setDestination("");
-    setTimeout(() => resetGateAnimation(), 2000);
+    setTimeout(() => resetGateAnimation(), 5000);
 }
 function resetGateAnimation() {
 
@@ -273,5 +276,58 @@ function activateStargate() {
 
 }
 
-setInterval(() => activateStargate(), 75000);
-activateStargate();
+// setInterval(() => activateStargate(), 75000);
+// activateStargate();
+
+const socket = new WebSocket("ws://esp32-stargate/ws");
+socket.addEventListener("message", (event) => {
+    console.log("Message from server ", event.data);
+
+    if (event.data[0] === '0') {
+        console.log("Cancel");
+
+        setDestination("");
+        currentAddress = "";
+        currentStep = 0;
+    } else if (event.data[0] === '1') {
+        startRotation(parseInt(event.data[1]));
+    } else if (event.data[0] === '2') {
+        activateChevron(parseInt(event.data[1]) + 1, event.data[2]);
+    } else if (event.data[0] === '3') {
+        openGate();
+        openGateInfinite();
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if (currentStep !== 0) {
+        if (event.key === 'Backspace') {
+            shutdownGate();
+            socket.send('1');
+            currentStep = 0;
+        }
+
+        return;
+    }
+
+    if (event.key === 'Backspace') {
+        currentAddress = currentAddress.substring(0, currentAddress.length-1);
+        setDestination(currentAddress);
+        return;
+    }
+
+
+    if (event.code === 'Enter') {
+        console.log("dialing");
+        socket.send('0' + currentAddress);
+        currentStep = 1;
+        return;
+    }
+
+    if (!event.code.startsWith('Key') && event.key !== '-' && !event.code.startsWith('Digit')) {
+        return;
+    }
+
+    currentAddress += event.key.toUpperCase();
+    setDestination(currentAddress);
+});

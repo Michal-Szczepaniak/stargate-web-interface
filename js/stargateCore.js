@@ -305,6 +305,8 @@ document.addEventListener('keydown', function(event) {
             shutdownGate();
             socket.send('1');
             currentStep = 0;
+            setDestination("");
+            currentAddress = "";
         }
 
         return;
